@@ -1,44 +1,60 @@
 from flask import Flask, request, jsonify
 from flask_restful import Api, Resource
 
-app = Flask(__name__) 
+app = Flask(__name__)
 api = Api(app)
 
-todo = {}
+# In-memory storage for todos
+todos = {}
 
+# Home resource
 class Home(Resource):
     def get(self):
-        return "Welcome to Todo List API!"
+        return {"message": "Welcome to Todo List API!"}, 200
 
-class post_Todo(Resource):
-    def post(self, newTodo):
-        todo[newTodo] = newTodo
-        return "Todo added successfully!"
+# Todo resource for all CRUD operations
+class TodoResource(Resource):
+    def get(self, todo_id=None):
+        if todo_id:
+            # Retrieve a specific todo
+            if todo_id in todos:
+                return {todo_id: todos[todo_id]}, 200
+            return {"error": "Todo not found"}, 404
+        # List all todos
+        return todos, 200
 
-class get_Todo(Resource):
-    def get(self, todoId):
-        return jsonify(todo[todoId])
+    def post(self):
+        # Create a new todo
+        data = request.json
+        if not data or "id" not in data or "todo" not in data:
+            return {"error": "Invalid data, 'id' and 'todo' are required"}, 400
+        todo_id = data["id"]
+        todo_text = data["todo"]
+        if todo_id in todos:
+            return {"error": "Todo with this ID already exists"}, 400
+        todos[todo_id] = todo_text
+        return {"message": "Todo added successfully", "todo": {todo_id: todo_text}}, 201
 
-class delete_Todo(Resource):
-    def delete(self, todoId):
-        del todo[todoId]
-        return "Todo deleted successfully!"
+    def put(self, todo_id):
+        # Update an existing todo
+        if todo_id not in todos:
+            return {"error": "Todo not found"}, 404
+        data = request.json
+        if not data or "todo" not in data:
+            return {"error": "Invalid data, 'todo' is required"}, 400
+        todos[todo_id] = data["todo"]
+        return {"message": "Todo updated successfully", "todo": {todo_id: todos[todo_id]}}, 200
 
-class update_Todo(Resource):
-    def put(self, todoId):
-        todo[todoId] = request.json['newTodo']
-        return "Todo updated successfully!"
+    def delete(self, todo_id):
+        # Delete a todo
+        if todo_id not in todos:
+            return {"error": "Todo not found"}, 404
+        del todos[todo_id]
+        return {"message": "Todo deleted successfully"}, 204
 
-class listTodo(Resource):
-    def get(self):
-        return jsonify(todo)    
-
+# Routes
 api.add_resource(Home, '/')
-api.add_resource(post_Todo, '/addTodo/<string:newTodo>')
-api.add_resource(get_Todo, '/getTodo/<string:todoId>')
-api.add_resource(delete_Todo, '/deleteTodo/<string:todoId>')
-api.add_resource(update_Todo, '/updateTodo/<string:todoId>')
-api.add_resource(listTodo, "/todo")
+api.add_resource(TodoResource, '/todos', '/todos/<string:todo_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
