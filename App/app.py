@@ -58,4 +58,4 @@ api.add_resource(Index, '/')
 api.add_resource(TodoResource, '/todo', '/todo/<int:id>')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=3000, debug=True)
