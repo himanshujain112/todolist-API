@@ -1,5 +1,6 @@
 import sqlite3
 from flask import jsonify
+
 class TodoModel():
 
     def __init__(self):

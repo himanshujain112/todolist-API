@@ -1,8 +1,15 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, jsonify
 from flask_restful import Resource, Api
 from model.todo_model import TodoModel
-todos = {'1': 'Go to Market', '2': 'Buy a car', '3': 'Learn Python'}
+from marshmallow import Schema, fields, ValidationError
 
+#todos = {'1': 'Go to Market', '2': 'Buy a car', '3': 'Learn Python'}
+
+class itemSchema(Schema):
+    id = fields.Int(required=True)
+    todo = fields.Str(load_default="No description provided")
+
+item_Schema = itemSchema()
 obj = TodoModel()
 
 class TodoResource(Resource):
@@ -15,10 +22,14 @@ class TodoResource(Resource):
 
 #Create new Todo
     def post(self):
-        data = request.get_json()
-        if not data:
-            return {"error": "Invalid data"}, 400
-        return obj.create_new_todo(data["todo"])
+        try:
+            data = item_Schema.load(request.json)
+            
+        #if not data:
+          #  return {"error": "Invalid data"}, 400
+            return obj.create_new_todo(data["todo"]), 201
+        except ValidationError as err:
+            return ({"error message" : err.messages}), 400
     
 #Update a Todo
     def put(self, todo_id):
